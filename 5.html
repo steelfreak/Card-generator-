@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Profile Card with Upload and Username Change</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+      justify-content: center;
+      margin: 0;
+      background: #f0f2f5;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      width: 300px;
+      padding: 30px 20px 40px 20px;
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    }
+    .profile-pic {
+      width: 100px;
+      max-height: 100px;
+      height: auto;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #3498db;
+      margin-bottom: 20px;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .username {
+      font-size: 22px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .message {
+      font-size: 16px;
+      color: #555;
+      line-height: 1.4;
+      min-height: 60px;
+      padding: 0 10px;
+    }
+    .input-container {
+      margin-top: 25px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .input-container input,
+    .input-container button {
+      padding: 8px 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      outline: none;
+      width: 90%;
+      max-width: 260px;
+      margin-bottom: 10px;
+      transition: border-color 0.2s ease;
+    }
+    .input-container input:focus {
+      border-color: #3498db;
+    }
+    .input-container button {
+      background: #3498db;
+      color: white;
+      cursor: pointer;
+      border: none;
+    }
+    .input-container button:hover {
+      background: #2980b9;
+    }
+    .file-upload-container,
+    .username-change-container {
+      margin-top: 20px;
+      width: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .file-upload-container label,
+    .username-change-container label {
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+    .file-upload-container input[type="file"],
+    .username-change-container input[type="text"] {
+      cursor: pointer;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      width: 90%;
+      max-width: 260px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+    .username-change-container input[type="text"]:focus {
+      border-color: #3498db;
+      cursor: text;
+    }
+  </style>
+</head>
+<body>
+  <div class="card" role="region" aria-label="Profile card">
+    <img
+      src="https://randomuser.me/api/portraits/women/44.jpg"
+      alt="Jane Doe's profile picture"
+      class="profile-pic"
+      id="profilePic"
+    />
+    <div class="username" id="username">Jane Doe</div>
+    <div class="message" id="message">
+      Hello! This is a beautiful card component with a profile picture.
+    </div>
+    <div class="input-container">
+      <form id="messageForm" aria-label="Update message form">
+        <input
+          type="text"
+          id="messageInput"
+          placeholder="Type your message"
+          aria-label="Message input"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button type="submit">Update Message</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="file-upload-container">
+    <label for="imageUpload">Upload Profile Picture from Device:</label>
+    <input
+      type="file"
+      id="imageUpload"
+      accept="image/*"
+      aria-label="Upload profile picture"
+    />
+  </div>
+
+  <div class="username-change-container">
+    <form id="usernameForm" aria-label="Change username form">
+      <label for="usernameInput">Change Username:</label>
+      <input
+        type="text"
+        id="usernameInput"
+        placeholder="Enter new username"
+        aria-label="Username input"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button type="submit">Update Username</button>
+    </form>
+  </div>
+
+  <script>
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
+
+    const profilePic = document.getElementById("profilePic");
+    const username = document.getElementById("username");
+    const messageDiv = document.getElementById("message");
+    const messageInput = document.getElementById("messageInput");
+    const imageUpload = document.getElementById("imageUpload");
+    const messageForm = document.getElementById("messageForm");
+
+    const usernameInput = document.getElementById("usernameInput");
+    const usernameForm = document.getElementById("usernameForm");
+
+    // Load persisted data from localStorage on load
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedMessage = localStorage.getItem("profileMessage");
+      if (savedMessage !== null && savedMessage.trim() !== "") {
+        messageDiv.textContent = savedMessage;
+        messageInput.value = savedMessage;
+      }
+
+      const savedImage = localStorage.getItem("profileImage");
+      if (savedImage) {
+        profilePic.src = savedImage;
+        profilePic.alt = (localStorage.getItem("profileUsername") || "Jane Doe") + "'s profile picture";
+      }
+
+      const savedUsername = localStorage.getItem("profileUsername");
+      if (savedUsername && savedUsername.trim() !== "") {
+        username.textContent = savedUsername;
+        profilePic.alt = savedUsername + "'s profile picture";
+        usernameInput.value = savedUsername;
+      }
+    });
+
+    // Update message on form submission (button click or Enter key)
+    function updateMessage(e) {
+      if (e) e.preventDefault();
+      const newText = messageInput.value.trim();
+      if (newText.length > 0) {
+        messageDiv.textContent = newText;
+        localStorage.setItem("profileMessage", newText);
+      } else {
+        alert("Please enter a message!");
+        messageInput.focus();
+      }
+    }
+
+    messageForm.addEventListener("submit", updateMessage);
+
+    // Live preview while typing
+    messageInput.addEventListener("input", (e) => {
+      const text = e.target.value;
+      messageDiv.textContent =
+        text.length > 0
+          ? text
+          : "Hello! This is a beautiful card component with a profile picture.";
+    });
+
+    // Handle profile picture upload with validation and persistence
+    imageUpload.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // Validation: must be image
+      if (!file.type.startsWith("image/")) {
+        alert("Please upload an image file.");
+        event.target.value = "";
+        return;
+      }
+
+      // Validation: size limit
+      if (file.size > MAX_FILE_SIZE) {
+        alert("Image must be under 2 MB.");
+        event.target.value = "";
+        return;
+      }
+
+      // Use URL.createObjectURL for better memory and revoke after load
+      const url = URL.createObjectURL(file);
+      profilePic.src = url;
+
+      const currentUsername = localStorage.getItem("profileUsername") || "Jane Doe";
+      profilePic.alt = currentUsername + "'s profile picture";
+
+      profilePic.onload = () => {
+        URL.revokeObjectURL(url);
+      };
+
+      // Read file as Data URL to save in localStorage (may be large but max 2 MB ok)
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        localStorage.setItem("profileImage", e.target.result);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Update username on form submission
+    function updateUsername(e) {
+      if (e) e.preventDefault();
+      const newUser = usernameInput.value.trim();
+      if (newUser.length > 0) {
+        username.textContent = newUser;
+        profilePic.alt = newUser + "'s profile picture";
+        localStorage.setItem("profileUsername", newUser);
+      } else {
+        alert("Please enter a valid username!");
+        usernameInput.focus();
+      }
+    }
+
+    usernameForm.addEventListener("submit", updateUsername);
+  </script>
+</body>
+</html>

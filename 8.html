@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Profile Card with Upload, Username Change and PNG Download</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+      justify-content: center;
+      margin: 0;
+      background: #f0f2f5;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      width: 300px;
+      padding: 30px 20px 40px 20px;
+      text-align: center;
+      transition: transform 0.3s ease;
+      user-select: none;
+    }
+    .card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    }
+    .profile-pic {
+      width: 100px;
+      max-height: 100px;
+      height: auto;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #3498db;
+      margin-bottom: 20px;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .username {
+      font-size: 22px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 10px;
+      word-break: break-word;
+    }
+    .message {
+      font-size: 16px;
+      color: #555;
+      line-height: 1.4;
+      min-height: 60px;
+      padding: 0 10px;
+      word-wrap: break-word;
+    }
+    .input-container {
+      margin-top: 25px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .input-container input,
+    .input-container button,
+    .username-change-container input[type="text"],
+    .file-upload-container input[type="file"] {
+      padding: 8px 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      outline: none;
+      width: 90%;
+      max-width: 260px;
+      margin-bottom: 10px;
+      transition: border-color 0.2s ease;
+      box-sizing: border-box;
+    }
+    .input-container input:focus,
+    .username-change-container input[type="text"]:focus,
+    .file-upload-container input[type="file"]:focus {
+      border-color: #3498db;
+      cursor: text;
+    }
+    .input-container button,
+    .username-change-container button,
+    #downloadBtn {
+      background: #3498db;
+      color: white;
+      cursor: pointer;
+      border: none;
+      user-select: none;
+      border-radius: 10px;
+      width: 92%;
+      max-width: 260px;
+      font-size: 16px;
+      padding: 10px 0;
+    }
+    .input-container button:hover,
+    .username-change-container button:hover,
+    #downloadBtn:hover {
+      background: #2980b9;
+    }
+    .file-upload-container,
+    .username-change-container,
+    .download-container {
+      margin-top: 20px;
+      width: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .file-upload-container label,
+    .username-change-container label {
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+      user-select: none;
+      width: 90%;
+      max-width: 260px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="card" role="region" aria-label="Profile card" id="card">
+    <img
+      src="https://randomuser.me/api/portraits/women/44.jpg"
+      alt="Jane Doe's profile picture"
+      class="profile-pic"
+      id="profilePic"
+    />
+    <div class="username" id="username">Jane Doe</div>
+    <div class="message" id="message">
+      Hello! This is a beautiful card component with a profile picture.
+    </div>
+    <div class="input-container">
+      <form id="messageForm" aria-label="Update message form" novalidate>
+        <input
+          type="text"
+          id="messageInput"
+          placeholder="Type your message"
+          aria-label="Message input"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button type="submit">Update Message</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="file-upload-container">
+    <label for="imageUpload">Upload Profile Picture from Device:</label>
+    <input
+      type="file"
+      id="imageUpload"
+      accept="image/*"
+      aria-label="Upload profile picture"
+    />
+  </div>
+
+  <div class="username-change-container">
+    <form id="usernameForm" aria-label="Change username form" novalidate>
+      <label for="usernameInput">Change Username:</label>
+      <input
+        type="text"
+        id="usernameInput"
+        placeholder="Enter new username"
+        aria-label="Username input"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button type="submit">Update Username</button>
+    </form>
+  </div>
+
+  <div class="download-container">
+    <button id="downloadBtn" aria-label="Download profile card as PNG">
+      Download Card as PNG
+    </button>
+  </div>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+      // Elements
+      const profilePic = document.getElementById("profilePic");
+      const username = document.getElementById("username");
+      const messageDiv = document.getElementById("message");
+      const messageInput = document.getElementById("messageInput");
+      const imageUpload = document.getElementById("imageUpload");
+      const messageForm = document.getElementById("messageForm");
+      const usernameInput = document.getElementById("usernameInput");
+      const usernameForm = document.getElementById("usernameForm");
+      const downloadBtn = document.getElementById("downloadBtn");
+
+      // Load saved data from localStorage
+      const savedUsername = localStorage.getItem("profileUsername") || "Jane Doe";
+      username.textContent = savedUsername;
+      usernameInput.value = savedUsername;
+
+      const savedMessage = localStorage.getItem("profileMessage") || "";
+      if (savedMessage.trim() !== "") {
+        messageDiv.textContent = savedMessage;
+        messageInput.value = savedMessage;
+      } else {
+        messageDiv.textContent = "Hello! This is a beautiful card component with a profile picture.";
+      }
+
+      const savedImage = localStorage.getItem("profileImage");
+      if (savedImage) {
+        profilePic.src = savedImage;
+      }
+      profilePic.alt = savedUsername + "'s profile picture";
+
+      // Update message form submission
+      messageForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const newText = messageInput.value.trim();
+        if (newText.length > 0) {
+          messageDiv.textContent = newText;
+          localStorage.setItem("profileMessage", newText);
+        } else {
+          alert("Please enter a message!");
+          messageInput.focus();
+        }
+      });
+
+      // Live message preview while typing
+      messageInput.addEventListener("input", (e) => {
+        const text = e.target.value;
+        messageDiv.textContent =
+          text.length > 0
+            ? text
+            : "Hello! This is a beautiful card component with a profile picture.";
+      });
+
+      // Profile picture upload with validation and persistence
+      imageUpload.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+          alert("Please upload an image file.");
+          event.target.value = "";
+          return;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+          alert("Image must be under 5 MB.");
+          event.target.value = "";
+          return;
+        }
+
+        const url = URL.createObjectURL(file);
+        profilePic.src = url;
+
+        profilePic.alt = username.textContent + "'s profile picture";
+
+        profilePic.onload = () => {
+          URL.revokeObjectURL(url);
+        };
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          localStorage.setItem("profileImage", e.target.result);
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Username form submission
+      usernameForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const newUser = usernameInput.value.trim();
+        if (newUser.length > 0) {
+          username.textContent = newUser;
+          profilePic.alt = newUser + "'s profile picture";
+          localStorage.setItem("profileUsername", newUser);
+        } else {
+          alert("Please enter a valid username!");
+          usernameInput.focus();
+        }
+      });
+
+      // Helper function to draw rounded rectangle on canvas
+      function roundRect(ctx, x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+      }
+
+      // Helper to draw multiline text on canvas
+      function drawMultilineText(ctx, text, x, y, maxWidth, lineHeight) {
+        const words = text.split(' ');
+        let line = '';
+        const lines = [];
+        for (let n = 0; n < words.length; n++) {
+          const testLine = line + words[n] + ' ';
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > maxWidth && n > 0) {
+            lines.push(line.trim());
+            line = words[n] + ' ';
+          } else {
+            line = testLine;
+          }
+          if (n === words.length - 1) {
+            lines.push(line.trim());
+          }
+        }
+        lines.forEach((lineText, i) => {
+          ctx.fillText(lineText, x, y + (i * lineHeight));
+        });
+      }
+
+      // Download button click handler: draw the card manually on canvas
+      downloadBtn.addEventListener('click', () => {
+        // Canvas size as card width x height
+        const width = 300;
+        const height = 230; // estimated height based on content
+
+        // Create a canvas - double size for better resolution
+        const canvas = document.createElement('canvas');
+        canvas.width = width * 2;
+        canvas.height = height * 2;
+        const ctx = canvas.getContext('2d');
+
+        // Scale for crisp drawing
+        ctx.scale(2, 2);
+
+        // Clear canvas (transparent)
+        ctx.clearRect(0, 0, width, height);
+
+        // Draw card background with shadow
+        ctx.shadowColor = 'rgba(0,0,0,0.1)';
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 8;
+
+        ctx.fillStyle = 'white';
+        roundRect(ctx, 0, 0, width, height, 20);
+        ctx.fill();
+
+        // Remove shadow for content
+        ctx.shadowColor = 'transparent';
+
+        // Draw profile picture border circle
+        const picX = width / 2;
+        const picY = 60;
+        const picRadius = 50;
+
+        ctx.beginPath();
+        ctx.arc(picX, picY, picRadius + 4, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // Draw profile picture clipped as circle
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(picX, picY, picRadius, 0, 2 * Math.PI);
+        ctx.clip();
+
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = profilePic.src;
+
+        img.onload = () => {
+          ctx.drawImage(img, picX - picRadius, picY - picRadius, picRadius * 2, picRadius * 2);
+          ctx.restore();
+
+          // Draw username text
+          ctx.fillStyle = '#333';
+          ctx.font = '700 22px "Segoe UI", Tahoma, Geneva, Verdana, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(username.textContent, width / 2, 135);
+
+          // Draw message text with word wrap
+          ctx.fillStyle = '#555';
+          ctx.font = '16px "Segoe UI", Tahoma, Geneva, Verdana, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+
+          const maxTextWidth = width - 40;
+          drawMultilineText(ctx, messageDiv.textContent, width / 2, 155, maxTextWidth, 22);
+
+          // Export canvas as PNG and trigger download
+          canvas.toBlob(blob => {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'profile-card.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }, 'image/png');
+        };
+
+        img.onerror = () => {
+          alert('Failed to load profile image for export.');
+          ctx.restore(); // restore clipping if failed
+        };
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Profile Card with Upload, Username Change and PNG Download</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+      justify-content: center;
+      margin: 0;
+      background: #f0f2f5;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      width: 400px;
+      padding: 30px 20px 40px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      transition: transform 0.3s ease;
+      user-select: none;
+    }
+    .card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    }
+    .profile-pic {
+      width: 100px;
+      min-width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #3498db;
+      flex-shrink: 0;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex: 1;
+      min-width: 0;
+    }
+    .username {
+      font-size: 24px;
+      font-weight: 700;
+      color: #333;
+      margin: 0 0 8px 0;
+      word-break: break-word;
+    }
+    .message {
+      font-size: 16px;
+      color: #555;
+      line-height: 1.4;
+      min-height: 60px;
+      padding-right: 10px;
+      word-wrap: break-word;
+      margin: 0;
+    }
+    .file-upload-container,
+    .message-update-container,
+    .username-change-container,
+    .download-container {
+      margin-top: 20px;
+      width: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .file-upload-container label,
+    .username-change-container label {
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+      user-select: none;
+      width: 90%;
+      max-width: 380px;
+      text-align: left;
+    }
+    .file-upload-container input[type="file"],
+    .message-update-container input[type="text"],
+    .username-change-container input[type="text"] {
+      padding: 8px 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      outline: none;
+      width: 90%;
+      max-width: 380px;
+      margin-bottom: 10px;
+      transition: border-color 0.2s ease;
+      box-sizing: border-box;
+    }
+    .file-upload-container input[type="file"]:focus,
+    .message-update-container input[type="text"]:focus,
+    .username-change-container input[type="text"]:focus {
+      border-color: #3498db;
+      cursor: text;
+    }
+    .message-update-container button,
+    .input-container button,
+    .username-change-container button,
+    #downloadBtn {
+      background: #3498db;
+      color: white;
+      cursor: pointer;
+      border: none;
+      user-select: none;
+      border-radius: 10px;
+      width: 92%;
+      max-width: 380px;
+      font-size: 16px;
+      padding: 10px 0;
+    }
+    .message-update-container button:hover,
+    .input-container button:hover,
+    .username-change-container button:hover,
+    #downloadBtn:hover {
+      background: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <div class="card" role="region" aria-label="Profile card" id="card">
+    <img
+      src="https://randomuser.me/api/portraits/women/44.jpg"
+      alt="Jane Doe's profile picture"
+      class="profile-pic"
+      id="profilePic"
+      crossorigin="anonymous"
+    />
+    <div class="info">
+      <h2 class="username" id="username">Jane Doe</h2>
+      <p class="message" id="message">
+        Hello! This is a beautiful card component with a profile picture.
+      </p>
+    </div>
+  </div>
+
+  <div class="file-upload-container">
+    <label for="imageUpload">Upload Profile Picture from Device:</label>
+    <input
+      type="file"
+      id="imageUpload"
+      accept="image/*"
+      aria-label="Upload profile picture"
+    />
+  </div>
+
+  <div class="message-update-container">
+    <form id="messageForm" aria-label="Update message form" novalidate>
+      <input
+        type="text"
+        id="messageInput"
+        placeholder="Type your message"
+        aria-label="Message input"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button type="submit">Update Message</button>
+    </form>
+  </div>
+
+  <div class="username-change-container">
+    <form id="usernameForm" aria-label="Change username form" novalidate>
+      <label for="usernameInput">Change Username:</label>
+      <input
+        type="text"
+        id="usernameInput"
+        placeholder="Enter new username"
+        aria-label="Username input"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button type="submit">Update Username</button>
+    </form>
+  </div>
+
+  <div class="download-container">
+    <button id="downloadBtn" aria-label="Download profile card as PNG">
+      Download Card as PNG
+    </button>
+  </div>
+
+  <!-- Load html2canvas from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+      const profilePic = document.getElementById("profilePic");
+      const username = document.getElementById("username");
+      const messageDiv = document.getElementById("message");
+      const messageInput = document.getElementById("messageInput");
+      const imageUpload = document.getElementById("imageUpload");
+      const messageForm = document.getElementById("messageForm");
+      const usernameInput = document.getElementById("usernameInput");
+      const usernameForm = document.getElementById("usernameForm");
+      const downloadBtn = document.getElementById("downloadBtn");
+      const card = document.getElementById("card");
+
+      // Load saved data from localStorage
+      const savedUsername = localStorage.getItem("profileUsername") || "Jane Doe";
+      username.textContent = savedUsername;
+      usernameInput.value = savedUsername;
+
+      const savedMessage = localStorage.getItem("profileMessage") || "";
+      if (savedMessage.trim() !== "") {
+        messageDiv.textContent = savedMessage;
+        messageInput.value = savedMessage;
+      } else {
+        messageDiv.textContent = "Hello! This is a beautiful card component with a profile picture.";
+      }
+
+      const savedImage = localStorage.getItem("profileImage");
+      if (savedImage) {
+        profilePic.setAttribute('crossorigin', 'anonymous'); // Ensure crossorigin for stored image as well
+        profilePic.src = savedImage;
+      }
+      profilePic.alt = savedUsername + "'s profile picture";
+
+      // Message form submission handler
+      messageForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const newText = messageInput.value.trim();
+        if (newText.length > 0) {
+          messageDiv.textContent = newText;
+          localStorage.setItem("profileMessage", newText);
+        } else {
+          alert("Please enter a message!");
+          messageInput.focus();
+        }
+      });
+
+      // Live message preview while typing
+      messageInput.addEventListener("input", (e) => {
+        const text = e.target.value;
+        messageDiv.textContent =
+          text.length > 0
+            ? text
+            : "Hello! This is a beautiful card component with a profile picture.";
+      });
+
+      // Image upload validation and persistence
+      imageUpload.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+          alert("Please upload an image file.");
+          event.target.value = "";
+          return;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+          alert("Image must be under 5 MB.");
+          event.target.value = "";
+          return;
+        }
+
+        profilePic.setAttribute('crossorigin', 'anonymous'); // Set crossorigin for uploaded image
+        const url = URL.createObjectURL(file);
+        profilePic.src = url;
+        profilePic.alt = username.textContent + "'s profile picture";
+
+        profilePic.onload = () => {
+          URL.revokeObjectURL(url);
+        };
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          localStorage.setItem("profileImage", e.target.result);
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Username form submission handler
+      usernameForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const newUser = usernameInput.value.trim();
+        if (newUser.length > 0) {
+          username.textContent = newUser;
+          profilePic.alt = newUser + "'s profile picture";
+          localStorage.setItem("profileUsername", newUser);
+        } else {
+          alert("Please enter a valid username!");
+          usernameInput.focus();
+        }
+      });
+
+      // Download card as PNG with html2canvas
+      downloadBtn.addEventListener('click', () => {
+        html2canvas(card, {
+          backgroundColor: null,
+          scale: 2,
+          useCORS: true,
+          scrollX: -window.scrollX,
+          scrollY: -window.scrollY,
+        }).then(canvas => {
+          canvas.toBlob(blob => {
+            if (blob) {
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = 'profile-card.png';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+            } else {
+              alert('Failed to generate image');
+            }
+          }, 'image/png');
+        }).catch(err => {
+          alert('Error generating image: ' + err.message);
+          console.error(err);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
